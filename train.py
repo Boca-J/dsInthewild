@@ -49,9 +49,9 @@ def train(df_ls):
         train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
         train_df=train_df.reset_index()
         test_df=test_df.reset_index()
-        train_features=train_df[['ALQ121','DBQ700', 'DBD910','SMQ040']].values
+        train_features=train_df[['ALQ130','DBQ700', 'DBD910','SMQ040']].values
         train_labels=train_df['DIQ010'].values
-        test_features=test_df[['ALQ121','DBQ700', 'DBD910','SMQ040']].values
+        test_features=test_df[['ALQ130','DBQ700', 'DBD910','SMQ040']].values
         test_labels = test_df['DIQ010'].values
 
         print(df['DIQ010'].mean(),'are label 1')
@@ -73,7 +73,7 @@ def train(df_ls):
         m.append(b)
 
         print('adaboost')
-        ada=AdaBoostClassifier()
+        ada = AdaBoostClassifier(algorithm='SAMME')
         a, b = train_builtin(ada, train_features, train_labels, test_features, test_labels)
         f1.append(a)
         m.append(b)
@@ -97,7 +97,7 @@ def train(df_ls):
         m.append(b)
 
         print('mlp')
-        mlp=MLPClassifier()
+        mlp=MLPClassifier(max_iter=1000)
         a, b = train_builtin(mlp, train_features, train_labels, test_features, test_labels)
         f1.append(a)
         m.append(b)
@@ -144,7 +144,7 @@ def plot_graphs(df_ls):
         os.makedirs('plots')
 
     for i,df in enumerate(df_ls):
-        for column in ['ALQ121','DBQ700', 'DBD910','SMQ040']:
+        for column in ['ALQ130','DBQ700', 'DBD910','SMQ040']:
             sns.boxplot(data=df,x='RIDRETH3',y=column,showfliers=False)
             plt.title(f'boxplot of {column}_{i}')
             plt.xlabel('Race')
@@ -154,18 +154,8 @@ def plot_graphs(df_ls):
             plt.close()
 
 if __name__ == '__main__':
-    filenames = [['P_DEMO.XPT', 'P_DIQ.XPT', 'P_ALQ.XPT', 'P_DBQ.XPT', 'P_SMQ.XPT']]
-    columns_to_append = [['SEQN', 'RIDRETH3'], ['SEQN', 'DIQ010'], ['SEQN', 'ALQ121'], ['SEQN', 'DBQ700', 'DBD910'],
-                         ['SEQN', 'SMQ040']]
-    columns_replace = {'RIDRETH3': ([7, '.'], [np.nan, np.nan]),
-                       'DIQ010': ([2,3, 7, 9, '.'], [0,1, np.nan, np.nan, np.nan]),
-                       'ALQ121': ([77, 99, '.'], [np.nan, np.nan, 0]),
-                       'DBQ700': ([7, 9, '.'], [np.nan, np.nan, np.nan]),
-                       'DBD910': ([6666, 7777, 9999, '.'], [90, np.nan, np.nan, np.nan]),
-                       'SMQ040': ([7, 9, '.'], [np.nan, np.nan, 3])}
-    df = data_collection_merge(filenames, columns_to_append)
-    df = data_cleaning(df, columns_replace)
-    df = df.dropna()
+    df = get_data()
+
     combined_models,combined_f1_scores=train([df])
     print(combined_models,combined_f1_scores)
 
