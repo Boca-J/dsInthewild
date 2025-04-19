@@ -59,9 +59,9 @@ def process_df(train_df, test_df):
     train_df=train_df.reset_index()
     test_df=test_df.reset_index()
     train_features1=train_df[['ALQ130','DBD900', 'DBD910','SMD650','PAD660','PAD675','WHQ040','SLD012','OCQ180']].values
-    train_labels1=train_df['DIQ010'].values
+    train_labels1=train_df['KIQ022'].values
     test_features=test_df[['ALQ130','DBD900', 'DBD910','SMD650','PAD660','PAD675','WHQ040','SLD012','OCQ180']].values
-    test_labels = test_df['DIQ010'].values
+    test_labels = test_df['KIQ022'].values
 
 
 
@@ -124,7 +124,7 @@ def find_param(model,param_grid, df):
 
 
     X = df[['ALQ130','DBD900', 'DBD910','SMD650','PAD660','PAD675','WHQ040','SLD012','OCQ180']].values
-    y = df['DIQ010']
+    y = df['KIQ022']
     # Fit the model to the data
     # grid_search.fit(X, y)
 
@@ -142,7 +142,7 @@ def find_param_for_net(train_df, test_df, weight1, depths, widths, epochs=500, l
         test_features = test_df[
             ['ALQ130', 'DBD900', 'DBD910', 'SMD650', 'PAD660', 'PAD675',
              'WHQ040', 'SLD012', 'OCQ180']].values
-        test_labels = test_df['DIQ010'].values
+        test_labels = test_df['KIQ022'].values
 
         best_f1_score = 0
         best_config = None
@@ -199,13 +199,13 @@ def train_big_model(train_df,test_df):
 
     f1=[]
     m=[]
-
+    model_names = []
     train_df=train_df.reset_index()
     test_df=test_df.reset_index()
     train_features1=train_df[['ALQ130','DBD900', 'DBD910','SMD650','PAD660','PAD675','WHQ040','SLD012','OCQ180']].values
-    train_labels1=train_df['DIQ010'].values
+    train_labels1=train_df['KIQ022'].values
     test_features=test_df[['ALQ130','DBD900', 'DBD910','SMD650','PAD660','PAD675','WHQ040','SLD012','OCQ180']].values
-    test_labels = test_df['DIQ010'].values
+    test_labels = test_df['KIQ022'].values
 
 
 
@@ -224,9 +224,9 @@ def train_big_model(train_df,test_df):
 
 
 
-    # # print(df['DIQ010'].mean(),'are label 1')
-    weight0=len(df['DIQ010'])/(2*len(df[df['DIQ010']==0]))
-    weight1 = len(df['DIQ010']) / (2 * len(df[df['DIQ010'] == 1]))
+    # # print(df['KIQ022'].mean(),'are label 1')
+    weight0=len(df['KIQ022'])/(2*len(df[df['KIQ022']==0]))
+    weight1 = len(df['KIQ022']) / (2 * len(df[df['KIQ022'] == 1]))
     train_weights=[weight0 if label==0 else weight1 for label in train_labels]
     test_weights = [weight0 if label == 0 else weight1 for label in test_labels]
 
@@ -252,6 +252,7 @@ def train_big_model(train_df,test_df):
     a,b=train_builtin(knn,train_features,train_labels,test_features,test_labels)
     f1.append(a)
     m.append(b)
+    model_names.append('KNN')
 
 
     print(a, b, accuracy)
@@ -285,7 +286,7 @@ def train_big_model(train_df,test_df):
     a, b = train_builtin(randomforest, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
-
+    model_names.append('Random Forest')
 
 
     print('adaboost')
@@ -294,6 +295,8 @@ def train_big_model(train_df,test_df):
     a, b = train_builtin(ada, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
+    model_names.append('AdaBoost')
+
 
 
     # param_grid = {
@@ -312,6 +315,7 @@ def train_big_model(train_df,test_df):
     a, b = train_builtin(regression, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
+    model_names.append('Logistic Regression')
 
 
     # param_grid = [
@@ -327,6 +331,7 @@ def train_big_model(train_df,test_df):
     a, b = train_builtin(svc_rbf, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
+    model_names.append('SVC RBF')
 
     # #
     # param_grid = {
@@ -340,6 +345,7 @@ def train_big_model(train_df,test_df):
     a, b = train_builtin(svc_poly, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
+    model_names.append('SVC Poly')
 
     # param_grid = {
     #     'C': [0.1, 1, 10],  # Regularization parameter
@@ -359,6 +365,7 @@ def train_big_model(train_df,test_df):
     a, b = train_builtin(mlp, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
+    model_names.append('MLP')
 
     # param_grid = {
     #     'hidden_layer_sizes': [(50,), (100,), (50, 50)],  # Different configurations of layers
@@ -389,7 +396,7 @@ def train_big_model(train_df,test_df):
     # test_features = test_df[
     #     ['ALQ130', 'DBD900', 'DBD910', 'SMD650', 'PAD660', 'PAD675',
     #      'WHQ040', 'SLD012', 'OCQ180']].values
-    # test_labels = test_df['DIQ010'].values
+    # test_labels = test_df['KIQ022'].values
     #
     #
     model = ournet(9, 1, 3,200)
@@ -422,6 +429,7 @@ def train_big_model(train_df,test_df):
     print(f"f1_socre: {f1score}, auroc: {auroc}, accuracy: {accuracy}")
     f1.append(f1score)
     m.append(model)
+    model_names.append('Ournet')
 
 
 
@@ -433,269 +441,11 @@ def train_big_model(train_df,test_df):
     # print(f1_df)
     # f1_df.to_csv(file_name, index=False)
 
-    return m,f1
+    return m,f1, model_names
 
 
 
 
-def score_model_1(train_features, train_labels, test_features, test_labels):
-   
-    params = {
-            'rf_params': {
-                'n_estimators': 200,
-                'max_depth': 5,
-            },
-            'svc_params': {
-                'C': 1,
-                'gamma': 0.01,
-            },
-            'log_params': {
-                'C':0.1,
-            }
-        }
-    model = StackingModel1(
-        rf_params=params['rf_params'],
-        svc_params=params['svc_params'],
-        log_params=params['log_params']
-    )
-    
-    model.fit(train_features, train_labels)
-
-        # Predict and evaluate
-    pred = model.predict(test_features)
-    
-    # Evaluate the model
-    f1 = f1_score(test_labels, pred)
-    
-    accuracy = accuracy_score(test_labels, pred)
-    
-    print(f"Stacking Model #1 - F1 Score: {f1:.4f}, Accuracy: {accuracy:.4f}")
-    return pred
-
-
-
-def score_model_3(train_features, train_labels, test_features, test_labels):
-   
-    params = {
-        'knn_params': {
-            'n_neighbors': 40,  
-            'weights': 'uniform',  
-            'metric': 'manhattan', 
-        },
-        'ab_params': {
-            'n_estimators': 50, 
-            'learning_rate': 0.5, 
-        },
-        'log_params': {
-            'C': 100, 
-        }
-    }
-
-    model = StackingModel3(
-        knn_params=params['knn_params'],
-        ab_params=params['ab_params'],
-        log_params=params['log_params']
-    )
-    
-    model.fit(train_features, train_labels)
-
-
-    pred = model.predict(test_features)
-    
-    # Evaluate the model
-    f1 = f1_score(test_labels, pred)
-    
-    accuracy = accuracy_score(test_labels, pred)
-    
-    print(f"Stacking Model #1 - F1 Score: {f1:.4f}, Accuracy: {accuracy:.4f}")
-    return pred
-
-
-
-
-class StackingModel1:
-    """
-    Custom Stacking Model combining two base models (Random Forest and SVC)
-    and a Logistic Regression meta-model.
-    """
-    def __init__(self, rf_params=None, svc_params=None, log_params=None):
-        # Store parameters explicitly
-        self.rf_params = rf_params if rf_params is not None else {}
-        self.svc_params = svc_params if svc_params is not None else {}
-        self.log_params = log_params if log_params is not None else {}
-
-        # Initialize models with default parameters
-        self.rf_model = RandomForestClassifier(**self.rf_params, random_state=42)
-        self.svc_model = SVC(**self.svc_params, probability=True, random_state=42)
-        self.meta_model = LogisticRegression(**self.log_params, random_state=42)
-
-    def fit(self, X, y):
-        
-        # Reinitialize models with parameters
-        self.rf_model = RandomForestClassifier(**self.rf_params, random_state=42)
-        self.svc_model = SVC(**self.svc_params, probability=True, random_state=42)
-        self.meta_model = LogisticRegression(**self.log_params, random_state=42)
-
-        # Train base models
-        self.rf_model.fit(X, y)
-        self.svc_model.fit(X, y)
-
-        # Generate meta-features for meta-model training
-        rf_preds = self.rf_model.predict_proba(X)[:, 1].reshape(-1, 1)
-        svc_preds = self.svc_model.predict_proba(X)[:, 1].reshape(-1, 1)
-        meta_features = np.hstack((rf_preds, svc_preds))
-
-        # Train meta-model
-        self.meta_model.fit(meta_features, y)
-
-        
-
-    def predict(self, X):
-        # Generate meta-features for predictions
-        rf_preds = self.rf_model.predict_proba(X)[:, 1].reshape(-1, 1)
-        svc_preds = self.svc_model.predict_proba(X)[:, 1].reshape(-1, 1)
-        meta_features = np.hstack((rf_preds, svc_preds))
-
-        # Predict using meta-model
-        return self.meta_model.predict(meta_features)
-
-class StackingModel3:
-    def __init__(self, knn_params=None, ab_params=None, log_params=None):
-        self.knn_params = knn_params if knn_params is not None else {}
-        self.ab_params = ab_params if ab_params is not None else {}
-        self.log_params = log_params if log_params is not None else {}
-
-        self.knn_model = KNeighborsClassifier(**self.knn_params)
-        self.ab_model = AdaBoostClassifier(**self.ab_params, random_state=42)
-        self.meta_model = LogisticRegression(**self.log_params, random_state=42)
-
-    def fit(self, X, y):
-       
-        self.knn_model.fit(X, y)
-        self.ab_model.fit(X, y)
-
-        
-        knn_preds = self.knn_model.predict_proba(X)[:, 1].reshape(-1, 1)
-        ab_preds = self.ab_model.predict_proba(X)[:, 1].reshape(-1, 1)
-        meta_features = np.hstack((knn_preds, ab_preds))
-
-        
-        self.meta_model.fit(meta_features, y)
-
-    def predict(self, X):
-       
-        knn_preds = self.knn_model.predict_proba(X)[:, 1].reshape(-1, 1)
-        ab_preds = self.ab_model.predict_proba(X)[:, 1].reshape(-1, 1)
-        meta_features = np.hstack((knn_preds, ab_preds))
-
-    
-        return self.meta_model.predict(meta_features)
-
-   
-
-
-def find_param_for_stack1(train_features, train_labels, test_features, test_labels, param_grid, n_iter=20):
-    
-   
-    best_score = -np.inf
-    best_params = None
-    best_model = None
-
-    for i in range(n_iter):
-        # Randomly sample parameters from the grid
-        params = {
-            'rf_params': {
-                'n_estimators': random.choice(param_grid['rf_n_estimators']),
-                'max_depth': random.choice(param_grid['rf_max_depth']),
-            },
-            'svc_params': {
-                'C': random.choice(param_grid['svc_C']),
-                'gamma': random.choice(param_grid['svc_gamma']),
-            },
-            'log_params': {
-                'C': random.choice(param_grid['log_C']),
-            }
-        }
-
-        
-
-        print(f"Iteration {i+1}/{n_iter}: Trying parameters: {params}")
-
-        # Create an instance of the StackingModel with sampled parameters
-        model = StackingModel1(
-            rf_params=params['rf_params'],
-            svc_params=params['svc_params'],
-            log_params=params['log_params']
-        )
-
-        # Train the model
-        model.fit(train_features, train_labels)
-
-        # Predict and evaluate
-        predictions = model.predict(test_features)
-        score = f1_score(test_labels, predictions)
-
-        print(f"F1 Score: {score:.4f}")
-
-        # Update best model if needed
-        if score > best_score:
-            best_score = score
-            best_params = params
-            best_model = model
-
-    print("\nBest F1 Score:", best_score)
-    print("Best Parameters:", best_params)
-    
-    return best_model, best_params, best_score
-
-def find_param_for_stack3(train_features, train_labels, test_features, test_labels, param_grid, n_iter=50):
-    
-   
-    best_score = -np.inf
-    best_params = None
-    best_model = None
- 
-    for i in range(n_iter):
-
-        params = {
-            'knn_params': {
-                'n_neighbors': random.choice(param_grid['knn_n_neighbors']),
-                'weights': random.choice(param_grid['knn_weights']),
-                'metric': random.choice(param_grid['knn_metric']),
-            },
-            'ab_params': {
-                'n_estimators': random.choice(param_grid['ab_n_estimators']),
-                'learning_rate': random.choice(param_grid['ab_learning_rate']),
-            },
-            'log_params': {
-                'C': random.choice(param_grid['log_C']),
-            }
-        }
-
-        print(f"Iteration {i+1}/{n_iter}: Trying parameters: {params}")
-        model = StackingModel3(
-            knn_params=params['knn_params'],
-            ab_params=params['ab_params'],
-            log_params=params['log_params']
-        )
-
-        model.fit(train_features, train_labels)
-
-        predictions = model.predict(test_features)
-        score = f1_score(test_labels, predictions)
-
-        print(f"F1 Score: {score:.4f}")
-
-        # Update best model if needed
-        if score > best_score:
-            best_score = score
-            best_params = params
-            best_model = model
-
-        print("\nBest F1 Score:", best_score)
-        print("Best Parameters:", best_params)
-
-    return best_model, best_params, best_score
 
 if __name__ == '__main__':
     df = get_data()
@@ -717,7 +467,7 @@ if __name__ == '__main__':
 
     #find_param_for_stack1(train_features, train_labels, test_features, test_labels, param_grid1, n_iter=40)
 
-    # combined_models,combined_f1_scores=train_big_model(train_df, test_df)
+    combined_models,combined_f1_scores, model_names=train_big_model(train_df, test_df)
 
     # score_model_1(train_features,train_labels,test_features,test_labels)
 
@@ -730,7 +480,6 @@ if __name__ == '__main__':
         'log_C': [0.01, 0.1, 1, 10, 100],  
     }
 
-    # find_param_for_stack3(train_features, train_labels, test_features, test_labels, param_grid3)
-    score_model_3(train_features,train_labels,test_features,test_labels)
+   
 
 

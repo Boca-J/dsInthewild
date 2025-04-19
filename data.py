@@ -28,7 +28,7 @@ class Customdataset(Dataset):
         """
         feature_columns = ['ALQ130', 'DBD900', 'DBD910', 'SMD650', 'PAD660',
                            'PAD675', 'WHQ040', 'SLD012', 'OCQ180']
-        label_column = 'DIQ010'
+        label_column = 'KIQ022'
         self.features = torch.tensor(dataframe[feature_columns].values, dtype=torch.float32).to(device)
         self.labels = torch.tensor(dataframe[label_column].values, dtype=torch.float32).to(device)
 
@@ -89,13 +89,13 @@ def data_cleaning(df,columns):
 def get_data():
     filenames_years = [
          # [['DEMO_2013.XPT', 'DIQ_2013.XPT', 'ALQ_2013.XPT', 'DBQ_2013.XPT','SMQ_2013.XPT','PAQ_2013.XPT','WHQ_2013.XPT', 'SLQ_2013.XPT', 'OCQ_2013.XPT']],
-        [['DEMO_2015.XPT', 'DIQ_2015.XPT', 'ALQ_2015.XPT', 'DBQ_2015.XPT', 'SMQ_2015.XPT', 'PAQ_2015.XPT','WHQ_2015.XPT', 'SLQ_2015.XPT', 'OCQ_2015.XPT']],
-        [['P_DEMO.XPT', 'P_DIQ.XPT' ,'P_ALQ.XPT', 'P_DBQ.XPT', 'P_SMQ.XPT','P_PAQ.XPT','P_WHQ.XPT','P_SLQ.XPT','P_OCQ.XPT']]
+        [['DEMO_2015.XPT', 'KIQ_U_2015.xpt', 'ALQ_2015.XPT', 'DBQ_2015.XPT', 'SMQ_2015.XPT', 'PAQ_2015.XPT','WHQ_2015.XPT', 'SLQ_2015.XPT', 'OCQ_2015.XPT']],
+        [['P_DEMO.XPT', 'P_KIQ_U.xpt' ,'P_ALQ.XPT', 'P_DBQ.XPT', 'P_SMQ.XPT','P_PAQ.XPT','P_WHQ.XPT','P_SLQ.XPT','P_OCQ.XPT']]
     ]
 
     columns_to_append = [
         ['SEQN', 'RIDRETH3','RIDAGEYR', 'INDFMPIR'], #race,age,income to ratio
-        ['SEQN', 'DIQ010'], #diabete label
+        ['SEQN', 'KIQ022'], # ever had a failing kidey
         ['SEQN', 'ALQ130'], #Avg # alcoholic drinks/day - past 12 mos
         ['SEQN', 'DBD900', 'DBD910'], ## of meals from fast food or pizza place,# of frozen meals/pizza in past 30 days
         ['SEQN', 'SMD650'], #Avg # cigarettes/day during past 30 days
@@ -106,7 +106,7 @@ def get_data():
     ]
 
     columns_replace = {'RIDRETH3': ([7, np.nan], [np.nan, np.nan]),
-                       'DIQ010': ([2, 3, 7, 9, np.nan], [0.0, 1.0, np.nan, np.nan, np.nan]),
+                       'KIQ022': ([1, 2, 7, 9, np.nan], [0.0, 1.0, np.nan, np.nan, np.nan]),
                        'ALQ130': ([777, 999, np.nan], [np.nan, np.nan, 0.0]),
                        'DBD900': ([5555,7777,9999,np.nan], [25.0, np.nan, np.nan,np.nan]),
                        #'DBD905': ([6666,7777,9999,np.nan],[100.0,np.nan,np.nan,np.nan]),
