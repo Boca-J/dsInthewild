@@ -3,20 +3,6 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-# class Customdataset(Dataset):
-#     def __init__(self, dataframe):
-#         self.dataframe = dataframe
-#
-#     def __len__(self):
-#         return len(self.dataframe)
-#
-#     def __getitem__(self, idx):
-#         sample = self.dataframe.iloc[idx]
-#         features = torch.tensor(sample[['ALQ130','DBD900', 'DBD910','SMD650','PAD660','PAD675','WHQ040','SLD012','OCQ180']].values).float()
-#         label =  torch.tensor(sample['DIQ010']).float()
-#         return features, label
-#
-
 class Customdataset(Dataset):
     def __init__(self, dataframe, device='cpu'):
         """
@@ -88,7 +74,6 @@ def data_cleaning(df,columns):
 
 def get_data():
     filenames_years = [
-         # [['DEMO_2013.XPT', 'DIQ_2013.XPT', 'ALQ_2013.XPT', 'DBQ_2013.XPT','SMQ_2013.XPT','PAQ_2013.XPT','WHQ_2013.XPT', 'SLQ_2013.XPT', 'OCQ_2013.XPT']],
         [['DEMO_2015.XPT', 'KIQ_U_2015.xpt', 'ALQ_2015.XPT', 'DBQ_2015.XPT', 'SMQ_2015.XPT', 'PAQ_2015.XPT','WHQ_2015.XPT', 'SLQ_2015.XPT', 'OCQ_2015.XPT']],
         [['P_DEMO.XPT', 'P_KIQ_U.xpt' ,'P_ALQ.XPT', 'P_DBQ.XPT', 'P_SMQ.XPT','P_PAQ.XPT','P_WHQ.XPT','P_SLQ.XPT','P_OCQ.XPT']]
     ]
@@ -105,18 +90,17 @@ def get_data():
         ['SEQN','OCQ180'], #Hours worked last week in total all jobs
     ]
 
-    columns_replace = {'RIDRETH3': ([7, np.nan], [np.nan, np.nan]),
-                       'KIQ022': ([1, 2, 7, 9, np.nan], [0.0, 1.0, np.nan, np.nan, np.nan]),
-                       'ALQ130': ([777, 999, np.nan], [np.nan, np.nan, 0.0]),
-                       'DBD900': ([5555,7777,9999,np.nan], [25.0, np.nan, np.nan,np.nan]),
-                       #'DBD905': ([6666,7777,9999,np.nan],[100.0,np.nan,np.nan,np.nan]),
-                       'DBD910': ([6666, 7777, 9999, np.nan],[90.0, np.nan, np.nan, np.nan]),
-                       'SMD650': ([777, 999, np.nan], [np.nan, np.nan, 0.0]),
-                       'PAD660':([7777,9999,np.nan],[np.nan,np.nan,0.0]),
-                       'PAD675':([7777,9999,np.nan],[np.nan,np.nan,0.0]),
-                       'WHQ040':([7,9,np.nan],[np.nan,np.nan,np.nan]),
-                       'SLD012':([np.nan],[np.nan]),
-                       'OCQ180':([7777,9999,np.nan],[np.nan,np.nan,0.0]),
+    columns_replace = {'RIDRETH3': ([7, np.nan], [np.nan, np.nan]), # 'Other' or missing
+                       'KIQ022': ([1, 2, 7, 9, np.nan], [0.0, 1.0, np.nan, np.nan, np.nan]), # 0 - yes, 1 - no
+                       'ALQ130': ([777, 999, np.nan], [np.nan, np.nan, 0.0]), # Alcohol
+                       'DBD900': ([5555,7777,9999,np.nan], [25.0, np.nan, np.nan,np.nan]), # Fast food; 5555 - More than 21 meals per week
+                       'DBD910': ([6666, 7777, 9999, np.nan],[90.0, np.nan, np.nan, np.nan]), # Frozen food; 6666 - More than 90 times in 30 days
+                       'SMD650': ([777, 999, np.nan], [np.nan, np.nan, 0.0]), # Cigarettes
+                       'PAD660':([7777,9999,np.nan],[np.nan,np.nan,0.0]), # Vigorous activities
+                       'PAD675':([7777,9999,np.nan],[np.nan,np.nan,0.0]), # Moderate activities
+                       'WHQ040':([7,9,np.nan],[np.nan,np.nan,np.nan]), # Weight preference
+                       'SLD012':([np.nan],[np.nan]), # Sleep
+                       'OCQ180':([7777,9999,np.nan],[np.nan,np.nan,0.0]), # Work hours
                        }
 
     dataframes = []
