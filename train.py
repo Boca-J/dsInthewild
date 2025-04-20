@@ -452,9 +452,11 @@ if __name__ == '__main__':
     category = ['Mexican American', 'Hispanic', 'White', 'Black', 'Asian']
     col_name = 'RIDRETH3'
     train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+    
+    # Comment out the original data distribution plot
+    # plot_graphs([train_df, test_df])
+    
     train_features, train_labels, test_features, test_labels = process_df(train_df, test_df)
-    
-    
     
     param_grid1 = {
         'rf_n_estimators': [50, 100, 200, 300],
@@ -464,22 +466,61 @@ if __name__ == '__main__':
         'log_C': [0.01, 0.1, 1, 10, 100]
     }
 
+    # Train models
+    combined_models, combined_f1_scores, model_names = train_big_model(train_df, test_df)
 
-    #find_param_for_stack1(train_features, train_labels, test_features, test_labels, param_grid1, n_iter=40)
-
-    combined_models,combined_f1_scores, model_names=train_big_model(train_df, test_df)
-
-    # score_model_1(train_features,train_labels,test_features,test_labels)
-
+    # Hyperparameter grids (not used directly here)
     param_grid3 = {
-        'knn_n_neighbors': [11,15, 20, 30,40],  
-        'knn_weights': ['uniform', 'distance'],  
-        'knn_metric': ['euclidean', 'manhattan'],  
-        'ab_n_estimators': [50, 100, 150, 200], 
-        'ab_learning_rate': [0.01, 0.1, 0.5, 1], 
-        'log_C': [0.01, 0.1, 1, 10, 100],  
+        'knn_n_neighbors': [11, 15, 20, 30, 40],
+        'knn_weights': ['uniform', 'distance'],
+        'knn_metric': ['euclidean', 'manhattan'],
+        'ab_n_estimators': [50, 100, 150, 200],
+        'ab_learning_rate': [0.01, 0.1, 0.5, 1],
+        'log_C': [0.01, 0.1, 1, 10, 100],
     }
 
-   
+    # =========================
+    # New: Plot model performance comparison
+    # =========================
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import os
 
+    accuracy = []
+    auroc = []
 
+    for i, model in enumerate(combined_models):
+        if hasattr(model, 'predict'):
+            preds = model.predict(test_features)
+        else:
+            preds = torch.sigmoid(model(torch.tensor(test_features).float())).detach().numpy()
+            preds = (preds >= 0.5).astype(float)
+        preds = preds.reshape(-1)
+        accuracy.append(metrics.accuracy_score(test_labels, preds))
+        try:
+            auroc.append(metrics.roc_auc_score(test_labels, preds))
+        except:
+            auroc.append(0.5)  # Default AUROC if error occurs
+
+    if not os.path.exists('plots_model'):
+        os.makedirs('plots_model')
+
+    sns.set(style="whitegrid")
+    metrics_to_plot = {
+        'F1 Score': combined_f1_scores,
+        'Accuracy': accuracy,
+        'AUROC': auroc
+    }
+
+    for metric_name, metric_values in metrics_to_plot.items():
+        plt.figure(figsize=(10,6))
+        ax = sns.barplot(x=model_names, y=metric_values, palette='muted')
+        plt.title(f'Model Comparison - {metric_name}', fontsize=16)
+        plt.ylabel(metric_name, fontsize=14)
+        plt.xlabel('Models', fontsize=14)
+        plt.xticks(rotation=45)
+        for container in ax.containers:
+            ax.bar_label(container, fmt="%.2f", padding=5, fontsize=12)
+        plt.tight_layout()
+        plt.savefig(f'plots_model/{metric_name.replace(" ", "_")}_comparison.png')
+        plt.close()
