@@ -90,7 +90,8 @@ class ournet(nn.Module):
         previous_dim = self.input_dim
         for current_dim in self.hidden:
             layer = nn.Linear(previous_dim, current_dim, bias=self.bias)
-            layer.weight = nn.Parameter(torch.randn(layer.weight.shape) * eps, requires_grad=True)
+            # layer.weight = nn.Parameter(torch.randn(layer.weight.shape) * eps, requires_grad=True)
+            nn.init.kaiming_normal_(layer.weight, nonlinearity='relu')
             if layer.bias is not None:
                 layer.bias = nn.Parameter(torch.zeros_like(layer.bias), requires_grad=True)
             self.hidden_layers.append(layer)
@@ -98,7 +99,7 @@ class ournet(nn.Module):
 
         # Output layer
         final_layer = nn.Linear(self.hidden[-1], self.output_dim, bias=self.bias)
-        final_layer.weight = nn.Parameter(torch.randn(final_layer.weight.shape) * eps, requires_grad=True)
+        nn.init.kaiming_normal_(final_layer.weight, nonlinearity='linear')
         self.hidden_layers.append(final_layer)
 
     def forward(self, x):
@@ -133,8 +134,9 @@ def find_param(model,param_grid, df):
     # Best parameters found
     print("Best parameters:", random_search.best_params_)
 
-def find_param_for_net(train_df, test_df, weight1, depths, widths, epochs=500, lr=0.01):
-
+def find_param_for_net(train_df, test_df, weight1, depths, widths, epochs=100, lr=0.01):
+        print("Train label distribution:", np.unique(train_df['KIQ022'], return_counts=True))
+        print("Test label distribution:", np.unique(test_df['KIQ022'], return_counts=True))
         train_dataset = Customdataset(train_df)
         test_dataset = Customdataset(test_df)
         train_loader = DataLoader(train_dataset, batch_size=100, shuffle=True)
@@ -168,12 +170,17 @@ def find_param_for_net(train_df, test_df, weight1, depths, widths, epochs=500, l
                         optimizer.step()
                         total_loss += loss.item()
 
+                    # if epoch % 50 == 0 or epoch == epochs - 1:  # Optional: limit how often you log
+                    #     print(f"Epoch {epoch + 1}/{epochs} | Depth {depth}, Width {width} | Loss: {total_loss:.4f}")
+
                 # Evaluation loop
                 model.eval()
                 predict = torch.sigmoid(
                     model(torch.tensor(test_features).float()).detach())
 
                 predict = (predict >= 0.5).float()
+                # print("Positive predictions:", (predict == 1).sum().item(), "/", len(predict))
+                # print("Unique labels in test:", np.unique(test_labels))
 
                 # 3, 200
 
@@ -200,29 +207,15 @@ def train_big_model(train_df,test_df):
     f1=[]
     m=[]
     model_names = []
-    train_df=train_df.reset_index()
-    test_df=test_df.reset_index()
-    train_features1=train_df[['ALQ130','DBD900', 'DBD910','SMD650','PAD660','PAD675','WHQ040','SLD012','OCQ180']].values
-    train_labels1=train_df['KIQ022'].values
-    test_features=test_df[['ALQ130','DBD900', 'DBD910','SMD650','PAD660','PAD675','WHQ040','SLD012','OCQ180']].values
-    test_labels = test_df['KIQ022'].values
+ 
 
+    train_features, train_labels, test_features, test_labels = process_df(train_df, test_df)
+    columns = ['ALQ130','DBD900', 'DBD910','SMD650','PAD660','PAD675','WHQ040','SLD012','OCQ180']
+    train_df = pd.DataFrame(train_features, columns=columns)
+    train_df['KIQ022'] = train_labels
 
-
-
-    # The data is 15% vs 85% need to balance the data
-    smote = SMOTE(random_state=42)
-    train_features, train_labels = smote.fit_resample(train_features1, train_labels1)
-
-    # check if it is balanced
-
-    # train_labels_series = pd.Series(train_labels)
-    # class_percentages = train_labels_series.value_counts(
-    #     normalize=True) * 100
-    # print(class_percentages)
-
-
-
+    test_df = pd.DataFrame(test_features, columns=columns)
+    test_df['KIQ022'] = test_labels
 
     # # print(df['KIQ022'].mean(),'are label 1')
     weight0=len(df['KIQ022'])/(2*len(df[df['KIQ022']==0]))
@@ -240,49 +233,49 @@ def train_big_model(train_df,test_df):
     print(f1score, auroc, accuracy)
 
     print('knn')
-    knn=KNeighborsClassifier(metric="euclidean", weights="distance", n_neighbors=71)
-    #
-    # # param_grid = {
-    # #     'n_neighbors': range(2, 21),  # Testing values from 1 to 20
-    # #     'weights': ['uniform', 'distance'],
-    # #     'metric': ['euclidean', 'manhattan', 'minkowski']
-    # # }
-    # # find_param(knn,param_grid,train_features, train_labels)
+    knn=KNeighborsClassifier(metric="minkowski", weights="uniform", n_neighbors=16)
+    
+    # param_grid = {
+    #     'n_neighbors': range(2, 21),  # Testing values from 1 to 20
+    #     'weights': ['uniform', 'distance'],
+    #     'metric': ['euclidean', 'manhattan', 'minkowski']
+    # }
+    # find_param(knn,param_grid,train_df)
+    # exit()
     #
     a,b=train_builtin(knn,train_features,train_labels,test_features,test_labels)
     f1.append(a)
     m.append(b)
     model_names.append('KNN')
 
-
+    
     print(a, b, accuracy)
 
 
     print('random forest')
     # randomforest=RandomForestClassifier()
 
-    randomforest=RandomForestClassifier(n_estimators=100, max_depth=10)
-
-    # # # randomforest = RandomForestClassifier(bootstrap = False,
-    # #                      criterion =  'entropy',
-    # #                      max_depth = None,
-    # #                      max_features = 'sqrt',
-    # #                      min_samples_leaf = 2,
-    # #                      min_samples_split = 9,
-    # #                      n_estimators = 115,
-    # #                      random_state = 47)
-    #
-    # # param_grid = {
-    # #     'n_estimators': [100, 200, 300],
-    # #     # More trees can be better, but take longer to compute
-    # #     'max_depth': [10, 20, 30, None],
-    # #     # None means max depth not constrained
-    # #     'min_samples_split': [2, 5, 10],
-    # #     'min_samples_leaf': [1, 2, 4],
-    # #     'max_features': ['auto', 'sqrt', 'log2'],
-    # #     'bootstrap': [True, False]
-    # # }
-    # # find_param(randomforest, param_grid,df)
+    randomforest = RandomForestClassifier(bootstrap = False,
+                         criterion =  'entropy',
+                         max_depth = None,
+                         max_features = 'sqrt',
+                         min_samples_leaf = 2,
+                         min_samples_split = 9,
+                         n_estimators = 115,
+                         random_state = 47)
+    
+    # param_grid = {
+    #     'n_estimators': [100, 200, 300],
+    #     # More trees can be better, but take longer to compute
+    #     'max_depth': [10, 20, 30, None],
+    #     # None means max depth not constrained
+    #     'min_samples_split': [2, 5, 10],
+    #     'min_samples_leaf': [1, 2, 4],
+    #     'max_features': ['auto', 'sqrt', 'log2'],
+    #     'bootstrap': [True, False]
+    # }
+    # find_param(randomforest, param_grid,train_df)
+    
     a, b = train_builtin(randomforest, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
@@ -318,12 +311,12 @@ def train_big_model(train_df,test_df):
     model_names.append('Logistic Regression')
 
 
-    # param_grid = [
-    #     {'solver': ['lbfgs'], 'penalty': ['l2'], 'C': [0.01, 0.1, 1, 10, 100], 'class_weight': [None, 'balanced'], 'max_iter': [1000,10000, 20000, 30000]},
-    #     {'solver': ['liblinear'], 'penalty': ['l1', 'l2'], 'C': [0.01, 0.1, 1, 10, 100], 'class_weight': [None, 'balanced'], 'max_iter': [100, 200, 300]}
-    # ]
-    # find_param(regression, param_grid, df)
-    #
+    param_grid = [
+        {'solver': ['lbfgs'], 'penalty': ['l2'], 'C': [0.01, 0.1, 1, 10, 100], 'class_weight': [None, 'balanced'], 'max_iter': [1000,10000, 20000, 30000]},
+        {'solver': ['liblinear'], 'penalty': ['l1', 'l2'], 'C': [0.01, 0.1, 1, 10, 100], 'class_weight': [None, 'balanced'], 'max_iter': [100, 200, 300]}
+    ]
+   # find_param(regression, param_grid, df)
+    
 
 
     print('svc rbf')
@@ -347,12 +340,19 @@ def train_big_model(train_df,test_df):
     m.append(b)
     model_names.append('SVC Poly')
 
-    # param_grid = {
-    #     'C': [0.1, 1, 10],  # Regularization parameter
-    #     'degree': [2, 3, 4],  # Degree of the polynomial
-    #     'gamma': ['scale', 'auto', 0.01, 0.1, 1],  # Kernel coefficient
-    #     'coef0': [0, 0.5, 1]  # Independent term in kernel function
-    # }
+    param_grid = {
+        'C': [0.1, 1, 10],  # Regularization parameter
+        'degree': [2, 3, 4],  # Degree of the polynomial
+        'gamma': ['scale', 'auto', 0.01, 0.1, 1],  # Kernel coefficient
+        'coef0': [0, 0.5, 1]  # Independent term in kernel function
+    }
+
+    param_grid = {
+        'C': [0.1, 1, 5, 10],  # Regularization parameter
+        'degree': [2, 3, 4, 5],  # Degree of the polynomial
+        'gamma': ['scale'],  # Kernel coefficient
+        'coef0': [0, 0.5, 1,1.5, 2]  # Independent term in kernel function
+    }
     # find_param(svc_poly, param_grid, df)
 
 
@@ -367,13 +367,13 @@ def train_big_model(train_df,test_df):
     m.append(b)
     model_names.append('MLP')
 
-    # param_grid = {
-    #     'hidden_layer_sizes': [(50,), (100,), (50, 50)],  # Different configurations of layers
-    #     'activation': ['tanh', 'relu'],
-    #     'solver': ['sgd', 'adam'],
-    #     'alpha': [0.0001, 0.001, 0.01],  # Regularization strength
-    #     'learning_rate': ['constant', 'adaptive']
-    # }
+    param_grid = {
+        'hidden_layer_sizes': [(50,), (100,), (50, 50)],  # Different configurations of layers
+        'activation': ['tanh', 'relu'],
+        'solver': ['sgd', 'adam'],
+        'alpha': [0.0001, 0.001, 0.01],  # Regularization strength
+        'learning_rate': ['constant', 'adaptive']
+    }
     # find_param(mlp, param_grid, df)
 
 
@@ -384,11 +384,15 @@ def train_big_model(train_df,test_df):
 
     print('ournet')
 
-    # depths = [5,7]  # Example depths
-    # widths = [5,50, 100, 200,1000]  # Example widths
+    depths = [3,5,7,9]  # Example depths
+    widths = [5,50, 100, 200,1000]  # Example widths
 
 
     # best_config, best_f1, model = find_param_for_net(train_df,test_df,weight1,depths, widths)
+
+    # print("\n✅ Best Configuration Found:")
+    # print(f"Depth: {best_config[0]}, Width: {best_config[1]}")
+    # print(f"Best F1 Score: {best_f1:.4f}")
     # train_dataset = Customdataset(train_df)
     # test_dataset = Customdataset(test_df)
     # train_loader = DataLoader(train_dataset, batch_size=100, shuffle=True)
@@ -399,14 +403,14 @@ def train_big_model(train_df,test_df):
     # test_labels = test_df['KIQ022'].values
     #
     #
-    model = ournet(9, 1, 3,200)
+    model = ournet(9, 1, 7,50)
 
     criterion = nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor(weight1))
     optimizer = optim.Adam(model.parameters(), lr=0.01)
 
     # Training loop
-    for epoch in range(1000):
+    for epoch in range(100):
         model.train()
         total_loss = 0
         for inputs, labels in train_loader:
@@ -418,6 +422,7 @@ def train_big_model(train_df,test_df):
             optimizer.step()
             total_loss += loss.item()
 
+        
 
     model.eval()
     predict=torch.sigmoid(model(torch.tensor(test_features).float()).detach())
