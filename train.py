@@ -255,13 +255,13 @@ def train_big_model(train_df,test_df):
     print('random forest')
     # randomforest=RandomForestClassifier()
 
-    randomforest = RandomForestClassifier(bootstrap = False,
+    randomforest = RandomForestClassifier(bootstrap = True,
                          criterion =  'entropy',
-                         max_depth = None,
-                         max_features = 'sqrt',
-                         min_samples_leaf = 2,
-                         min_samples_split = 9,
-                         n_estimators = 115,
+                         max_depth = 10,
+                         max_features = 'log2',
+                         min_samples_leaf = 4,
+                         min_samples_split = 2,
+                         n_estimators = 100,
                          random_state = 47)
     
     # param_grid = {
@@ -283,7 +283,7 @@ def train_big_model(train_df,test_df):
 
 
     print('adaboost')
-    ada = AdaBoostClassifier(algorithm='SAMME', learning_rate=0.01, n_estimators=200,estimator=DecisionTreeClassifier(max_depth=2))
+    ada = AdaBoostClassifier(algorithm='SAMME', learning_rate=0.01, n_estimators=50,estimator=DecisionTreeClassifier(max_depth=1))
     # ada = AdaBoostClassifier(algorithm='SAMME')
     a, b = train_builtin(ada, train_features, train_labels, test_features, test_labels)
     f1.append(a)
@@ -303,7 +303,8 @@ def train_big_model(train_df,test_df):
 
     print('logistic regression')
     # regression=LogisticRegression(class_weight='balanced')
-    regression = LogisticRegression(class_weight='balanced', C=0.0001, max_iter=1000, penalty="l2", solver="lbfgs")
+    regression = LogisticRegression(class_weight= None, C=0.01, max_iter=1000, penalty="l2", solver="lbfgs")
+
 
     a, b = train_builtin(regression, train_features, train_labels, test_features, test_labels)
     f1.append(a)
@@ -320,7 +321,7 @@ def train_big_model(train_df,test_df):
 
 
     print('svc rbf')
-    svc_rbf=SVC(class_weight='balanced', kernel='rbf', max_iter=20000, C = 0.06, gamma= 0.01)
+    svc_rbf=SVC(class_weight='balanced', kernel='rbf', max_iter=20000, C = 10, gamma= 1)
     a, b = train_builtin(svc_rbf, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
@@ -334,7 +335,14 @@ def train_big_model(train_df,test_df):
     # find_param(svc_rbf, param_grid, df)
 
     print('SVC Poly')
-    svc_poly = SVC(class_weight='balanced', kernel='poly')
+    svc_poly = SVC(
+    class_weight='balanced',
+    kernel='poly',
+    C=10,         
+    degree=5,      
+    gamma='scale', 
+    coef0=2  
+            
     a, b = train_builtin(svc_poly, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
@@ -358,10 +366,10 @@ def train_big_model(train_df,test_df):
 
     print('mlp')
     # mlp=MLPClassifier(max_iter=1000)
-    mlp = MLPClassifier(max_iter=1000, solver="sgd",
+    mlp = MLPClassifier(max_iter=1000, solver="adam",
                         learning_rate='constant',
-                        hidden_layer_sizes=(50,50), alpha=0.001,
-                        activation='tanh')
+                        hidden_layer_sizes=(50,), alpha=0.001,
+                        activation='relu')
     a, b = train_builtin(mlp, train_features, train_labels, test_features, test_labels)
     f1.append(a)
     m.append(b)
